@@ -1,0 +1,2 @@
+add_executable(pricing_example pricing_example.cpp)
+target_link_libraries(pricing_example PRIVATE FinMaths)
