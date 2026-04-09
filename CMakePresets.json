@@ -2,14 +2,27 @@
   "version": 3,
   "configurePresets": [
     {
-      "name": "default",
+      "name": "base",
+      "hidden": true,
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "/usr/local/opt/llvm/bin/clang",
-        "CMAKE_CXX_COMPILER": "/usr/local/opt/llvm/bin/clang++",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "TRUE"
       }
+    },
+    {
+      "name": "default",
+      "displayName": "macOS (Homebrew LLVM)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "/usr/local/opt/llvm/bin/clang",
+        "CMAKE_CXX_COMPILER": "/usr/local/opt/llvm/bin/clang++"
+      }
+    },
+    {
+      "name": "ci",
+      "displayName": "CI (Linux)",
+      "inherits": "base"
     }
   ]
 }
