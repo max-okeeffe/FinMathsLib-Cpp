@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Library
 add_library(FinMaths
-    src/dummy.cpp
+    src/maths/distributions.cpp
 )
 
 target_include_directories(FinMaths

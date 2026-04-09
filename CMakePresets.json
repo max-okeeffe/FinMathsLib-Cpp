@@ -3,11 +3,12 @@
   "configurePresets": [
     {
       "name": "default",
-      "generator": "Unix Makefiles",
-      "binaryDir": "build",
-      "environment": {
-        "CC": "clang",
-        "CXX": "clang++"
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "/usr/local/opt/llvm/bin/clang",
+        "CMAKE_CXX_COMPILER": "/usr/local/opt/llvm/bin/clang++",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "TRUE"
       }
     }
   ]

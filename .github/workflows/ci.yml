@@ -24,3 +24,8 @@ jobs:
 
       - name: Test
         run: cd build && ctest --output-on-failure
+
+      - name: Check formatting
+        run: |
+          find include src tests examples -name "*.cpp" -o -name "*.hpp" | \
+          xargs clang-format --dry-run --Werror
