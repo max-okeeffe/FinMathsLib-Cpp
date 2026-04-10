@@ -1,6 +1,7 @@
 add_executable(FinMaths_Tests
     test_distributions.cpp
     test_statistics.cpp
+    test_calculus.cpp
 )
 
 target_link_libraries(FinMaths_Tests
