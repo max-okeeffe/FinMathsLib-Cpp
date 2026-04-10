@@ -9,6 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Library
 add_library(FinMaths
     src/maths/distributions.cpp
+    src/maths/statistics.cpp
 )
 
 target_include_directories(FinMaths
@@ -17,9 +18,9 @@ target_include_directories(FinMaths
 )
 
 if (MSVC)
-    target_compile_options(FinMaths INTERFACE /W4 /WX)
+    target_compile_options(FinMaths PRIVATE /W4 /WX)
 else()
-    target_compile_options(FinMaths INTERFACE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(FinMaths PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endif()
 
 # GoogleTest
