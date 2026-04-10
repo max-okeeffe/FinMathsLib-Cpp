@@ -1,8 +1,7 @@
 #ifndef FINMATHS_DISTRIBUTIONS_HPP
 #define FINMATHS_DISTRIBUTIONS_HPP
 
-namespace FinMaths {
-namespace Maths {
+namespace FinMaths::Maths {
 
 /// @brief Computes the cumulative distribution of the standard normal disribution.
 ///
@@ -24,7 +23,6 @@ double normalCDF(double x);
 /// @return A corresponding z-value.
 double normalCDFInverse(double x);
 
-}  // namespace Maths
-}  // namespace FinMaths
+}  // namespace FinMaths::Maths
 
 #endif

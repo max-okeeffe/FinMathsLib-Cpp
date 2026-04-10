@@ -4,8 +4,7 @@
 #include <cmath>
 #include <stdexcept>
 
-namespace FinMaths {
-namespace Maths {
+namespace FinMaths::Maths {
 
 namespace {
 
@@ -94,5 +93,4 @@ double normalCDFInverse(double x) {
     return x > 0.5 ? t : -t;
 }
 
-}  // namespace Maths
-}  // namespace FinMaths
+}  // namespace FinMaths::Maths

@@ -16,6 +16,12 @@ target_include_directories(FinMaths
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+if (MSVC)
+    target_compile_options(FinMaths INTERFACE /W4 /WX)
+else()
+    target_compile_options(FinMaths INTERFACE -Wall -Wextra -Wpedantic -Werror)
+endif()
+
 # GoogleTest
 include(FetchContent)
 

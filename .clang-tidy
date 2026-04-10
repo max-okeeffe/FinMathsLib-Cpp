@@ -1,0 +1,15 @@
+Checks: >
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  bugprone-*
+  cppcoreguidelines-*,
+  modernize-*,
+  readability-*,
+  performance-*,
+  -modernize-use-trailing-return-type,
+  -readability-magic-numbers,
+  -readability-identifier-length,
+  -readability-math-missing-parentheses
+
+WarningsAsErrors: ""
+HeaderFilterRegex: "include/.*"
