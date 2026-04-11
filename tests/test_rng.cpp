@@ -1,8 +1,11 @@
 #include <gtest/gtest.h>
+
 #include <algorithm>
 #include <cstdlib>
 #include <numbers>
+#include <vector>
 
+#include "FinMaths/maths/distributions.hpp"
 #include "FinMaths/maths/rng.hpp"
 #include "FinMaths/maths/statistics.hpp"
 
@@ -29,7 +32,7 @@ TEST(SeedRNG, DifferentSeeds) {
 }
 
 class RandomUniformTest : public ::testing::Test {
-protected:
+   protected:
     static void SetUpTestSuite() {
         seedRNG(42);
         samples.resize(100000);
@@ -61,9 +64,41 @@ TEST_F(RandomUniformTest, Variance) {
 TEST_F(RandomUniformTest, IntervalProportion) {
     double a = 1.0 / std::numbers::sqrt3;
     double b = 1.0 / std::numbers::sqrt2;
-    
-    int count = std::ranges::count_if(samples, [a, b](double x) {
-        return x > a && x < b;
-    });
-    EXPECT_NEAR(double(count) / samples.size(), b - a, 0.01);
+
+    int count = std::ranges::count_if(samples, [a, b](double x) { return x > a && x < b; });
+    EXPECT_NEAR(static_cast<double>(count) / samples.size(), b - a, 0.01);
+}
+
+class RandomNormalTest : public ::testing::Test {
+   protected:
+    static void SetUpTestSuite() {
+        seedRNG(42);
+        samples.resize(100000);
+        for (double& x : samples) {
+            x = randomNormal();
+        }
+    }
+
+    static std::vector<double> samples;
+};
+
+std::vector<double> RandomNormalTest::samples;
+
+TEST_F(RandomNormalTest, Mean) {
+    EXPECT_NEAR(mean(samples), 0.0, 0.01);
+}
+
+TEST_F(RandomNormalTest, Variance) {
+    EXPECT_NEAR(variance(samples), 1.0, 0.01);
+}
+
+TEST_F(RandomNormalTest, IntervalProportion) {
+    double a = 1.0 / std::numbers::sqrt3;
+    double b = 1.0 / std::numbers::sqrt2;
+
+    int count = std::ranges::count_if(
+        samples, [a, b](double x) { return std::abs(x) > a && std::abs(x) < b; });
+
+    EXPECT_NEAR(static_cast<double>(count) / samples.size(), 2.0 * (normalCDF(b) - normalCDF(a)),
+                0.01);
 }
