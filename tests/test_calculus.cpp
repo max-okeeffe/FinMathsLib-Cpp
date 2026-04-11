@@ -49,3 +49,28 @@ TEST(Integrate, Convergence) {
     double expected = std::exp(5) - 1.0;
     EXPECT_LT(std::abs(fine - expected), std::abs(coarse - expected));
 }
+
+TEST(IntegrateToInfinity, ExponentialDecay) {
+    auto f = [](double x) { return std::exp(-x); };
+    EXPECT_NEAR(integrateToInfinity(f, 0), 1.0, 1e-8);
+}
+
+TEST(IntegrateToInfinity, NormalPDF) {
+    auto f = [](double x) { return std::exp(-0.5 * x * x) / std::sqrt(2.0 * std::numbers::pi); };
+    EXPECT_NEAR(integrateToInfinity(f, 0), 0.5, 1e-8);
+}
+
+TEST(IntegrateToInfinity, Reciprocal) {
+    auto f = [](double x) { return 1.0 / (x * x); };
+    EXPECT_NEAR(integrateToInfinity(f, 0.5), 2.0, 1e-8);
+}
+
+TEST(IntegrateToNegativeInfinity, ExponentialDecay) {
+    auto f = [](double x) { return std::exp(x); };
+    EXPECT_NEAR(integrateToNegativeInfinity(f, 0), 1.0, 1e-8);
+}
+
+TEST(IntegrateOverRealLine, NormalPDF) {
+    auto f = [](double x) { return std::exp(-0.5 * x * x) / std::sqrt(2.0 * std::numbers::pi); };
+    EXPECT_NEAR(integrateOverRealLine(f), 1.0, 1e-8);
+}
