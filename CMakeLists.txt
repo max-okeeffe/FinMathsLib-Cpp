@@ -9,8 +9,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Library
 add_library(FinMaths
     src/maths/distributions.cpp
-    src/maths/statistics.cpp
+    src/maths/matrix.cpp
     src/maths/rng.cpp
+    src/maths/statistics.cpp
 )
 
 target_include_directories(FinMaths
