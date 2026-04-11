@@ -10,7 +10,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(FinMaths
     src/maths/distributions.cpp
     src/maths/statistics.cpp
-    src/maths/calculus.cpp
 )
 
 target_include_directories(FinMaths
