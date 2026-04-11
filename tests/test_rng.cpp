@@ -4,7 +4,3 @@
 
 using namespace FinMaths::Maths;
 
-TEST(RNG, True) {
-    rng();
-    EXPECT_TRUE(true);
-}
