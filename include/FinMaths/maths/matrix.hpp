@@ -22,6 +22,9 @@ enum class VectorType : std::uint8_t { Row, Column };
  */
 class Matrix {
    public:
+
+    // Constructors 
+
     /**
      * @brief Construct a matrix with the given dimensions and inital value.
      *
@@ -69,6 +72,9 @@ class Matrix {
      * @throw std::invalid_argument if values is empty or not all elements of values have the same
      * positive size. */
     explicit Matrix(const std::vector<std::vector<double> >& values);
+
+
+    // Accessors
 
     /**
      * @brief Return the number of rows of the matrix.
@@ -218,7 +224,22 @@ class Matrix {
         return data[i * ncols + j];
     }
 
+
+    // Comparison operators
+
+    /**
+    * @brief Tests whether two matrices are equal
+    *
+    * Implemented by ensuring dimensions and elements are equal
+    */
     bool operator==(const Matrix& other) const noexcept;
+
+    /**
+    * @brief Tests whether two matrices are equal up to a tolerance.
+    *
+    * Implemented by ensuring dimensions are equal and elements are
+    * less in absolute value than tolerance pairwise.
+    */
     [[nodiscard]] bool isApprox(const Matrix& other, double tolerance) const noexcept;
 
    private:
