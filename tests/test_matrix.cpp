@@ -15,6 +15,8 @@ class MatrixTest : public ::testing::Test {
     Matrix fromVector{2, 3, {1.0, 2.0, 3.0, 4.0, 5.0, 6.0}};
     std::vector<double> vec{1.0, 2.0, 3.0};
     Matrix nested{{{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}}};
+    Matrix rowMatrix{1, 3, vec};
+    Matrix colMatrix{3, 1, vec};
 };
 
 TEST_F(MatrixTest, DefaultValue) {
@@ -68,7 +70,7 @@ TEST_F(MatrixTest, MismatchedDimensions) {
     EXPECT_THROW(Matrix m(1, 0, vec), std::invalid_argument);
 }
 
-TEST_F(MatrixTest, RowColVector) {
+TEST_F(MatrixTest, RowColVectorInit) {
     Matrix rowMatrix(vec, VectorType::Row);
     Matrix colMatrix(vec, VectorType::Column);
     Matrix m(vec);
@@ -123,7 +125,7 @@ TEST_F(MatrixTest, Size) {
     EXPECT_EQ(nested.size(), 6);
 }
 
-TEST_F(MatrixTest, RowCol) {
+TEST_F(MatrixTest, GetRowCol) {
     Matrix row = nested.row(1);
     Matrix col = nested.col(1);
 
@@ -131,11 +133,11 @@ TEST_F(MatrixTest, RowCol) {
     EXPECT_TRUE(col == Matrix(2, 1, {2.0, 5.0}));
 }
 
-TEST_F(MatrixTest, RowColBounds) {
-    EXPECT_THROW(nested.row(-1), std::out_of_range);
-    EXPECT_THROW(nested.row(2), std::out_of_range);
-    EXPECT_THROW(nested.col(-1), std::out_of_range);
-    EXPECT_THROW(nested.col(3), std::out_of_range);
+TEST_F(MatrixTest, GetRowColBounds) {
+    EXPECT_THROW((void)nested.row(-1), std::out_of_range);
+    EXPECT_THROW((void)nested.row(2), std::out_of_range);
+    EXPECT_THROW((void)nested.col(-1), std::out_of_range);
+    EXPECT_THROW((void)nested.col(3), std::out_of_range);
 }
 
 TEST_F(MatrixTest, SetRowCol) {
@@ -176,4 +178,26 @@ TEST_F(MatrixTest, IsApprox) {
     EXPECT_TRUE(a.isApprox(b, 1e-10));
     EXPECT_FALSE(a.isApprox(c, 1e-10));
     EXPECT_FALSE(a.isApprox(Matrix(3, 2), 1e-10));
+}
+
+TEST_F(MatrixTest, Converters) {
+    EXPECT_EQ(rowMatrix.asVector(), vec);
+    EXPECT_EQ(colMatrix.asVector(), vec);
+    EXPECT_DOUBLE_EQ(scalar.asScalar(), 23.0);
+
+    auto rowSpan = rowMatrix.asSpan();
+    auto colSpan = colMatrix.asSpan();
+    EXPECT_EQ(rowSpan.size(), vec.size());
+    EXPECT_EQ(colSpan.size(), vec.size());
+    EXPECT_TRUE(std::equal(rowSpan.begin(), rowSpan.end(), vec.begin()));
+    EXPECT_TRUE(std::equal(colSpan.begin(), colSpan.end(), vec.begin()));
+
+    const auto& ref = rowMatrix.asVector();
+    EXPECT_EQ(ref.data(), &rowMatrix.at(0, 0));
+
+    EXPECT_THROW((void)nested.asVector(), std::invalid_argument);
+    EXPECT_THROW((void)nested.asSpan(), std::invalid_argument);
+    EXPECT_THROW((void)nested.asScalar(), std::invalid_argument);
+    EXPECT_THROW((void)rowMatrix.asScalar(), std::invalid_argument);
+    EXPECT_THROW((void)colMatrix.asScalar(), std::invalid_argument);
 }
