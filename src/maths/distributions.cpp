@@ -68,7 +68,7 @@ inline double horner(double x, const std::array<double, N>& coeffs) {
 
 double normalCDF(double x) {
     int sign = x < 0.0 ? -1 : 1;
-     x *= sign;
+    x *= sign;
     if (x > 10.0) {
         return sign < 0 ? 0.0 : 1.0;
     }
