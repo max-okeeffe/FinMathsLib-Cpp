@@ -20,6 +20,7 @@ double normalCDF(double x);
  *
  * Uses Moro's algorithm via Horner's method.
  * Maximum absolute error is around \f$1 \times 10^{-9}$.
+ * Returns 1.0 if x > 10.0 and 0.0 if x < -10.0
  *
  * @param x The value at which to evaluate the inverse CDF.
  * @throws domain_error If \f$x <= 0\f$ or \f$x >= 1\f$.

@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cmath>
+#include <numbers>
 #include <stdexcept>
 
 namespace FinMaths::Maths {
@@ -56,7 +57,7 @@ constexpr std::array<double, 9> invC = {
 
 template <std::size_t N>
 inline double horner(double x, const std::array<double, N>& coeffs) {
-    double ret = 0;
+    double ret = 0.0;
     for (auto it = coeffs.rbegin(); it != coeffs.rend(); it++) {
         ret = *it + x * ret;
     }
@@ -66,18 +67,18 @@ inline double horner(double x, const std::array<double, N>& coeffs) {
 }  // namespace
 
 double normalCDF(double x) {
-    if (x == 0) {
-        return 0.5;
+    int sign = x < 0.0 ? -1 : 1;
+     x *= sign;
+    if (x > 10.0) {
+        return sign < 0 ? 0.0 : 1.0;
     }
-    if (x < 0) {
-        return 1 - normalCDF(-x);
-    }
-    double t = 1 / horner(x * M_SQRT1_2, normP);
-    return 1 - 0.5 * std::exp(-0.5 * x * x) * horner(t, normA);
+    double t = 1.0 / horner(x / std::numbers::sqrt2, normP);
+    double result = 1.0 - 0.5 * std::exp(-0.5 * x * x) * horner(t, normA);
+    return sign < 0 ? 1.0 - result : result;
 }
 
 double normalCDFInverse(double x) {
-    if (x <= 0 || x >= 1) {
+    if (x <= 0.0 || x >= 1.0) {
         throw std::domain_error("normalCDFInverse: input must be strictly between 0 and 1");
     }
 
@@ -87,10 +88,10 @@ double normalCDFInverse(double x) {
         return y * horner(r, invA) / horner(r, invB);
     }
 
-    double r = y < 0 ? x : 1 - x;
+    double r = std::min(x, 1.0 - x);
     double s = std::log(-std::log(r));
     double t = horner(s, invC);
-    return x > 0.5 ? t : -t;
+    return y > 0.0 ? t : -t;
 }
 
 }  // namespace FinMaths::Maths
