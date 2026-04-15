@@ -1,7 +1,8 @@
 #ifndef FINMATHS_MATRIX_HPP
 #define FINMATHS_MATRIX_HPP
 
-#include <cstddef>
+#include <cstdint>
+#include <span>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -22,8 +23,7 @@ enum class VectorType : std::uint8_t { Row, Column };
  */
 class Matrix {
    public:
-
-    // Constructors 
+    // Constructors
 
     /**
      * @brief Construct a matrix with the given dimensions and inital value.
@@ -70,9 +70,9 @@ class Matrix {
      * @param values a vector of vector of doubles.
      *
      * @throw std::invalid_argument if values is empty or not all elements of values have the same
-     * positive size. */
+     * positive size.
+     */
     explicit Matrix(const std::vector<std::vector<double> >& values);
-
 
     // Accessors
 
@@ -120,13 +120,13 @@ class Matrix {
     /**
      * @brief Return a const iterator to the beginning of the matrix data.
      */
-    std::vector<double>::const_iterator begin() const noexcept {  // NOLINT(modernize-use-nodiscard)
+    [[nodiscard]] std::vector<double>::const_iterator begin() const noexcept {
         return data.begin();
     }
     /**
      * @brief Return a const iterator to the end of the matrix data.
      */
-    std::vector<double>::const_iterator end() const noexcept {  // NOLINT(modernize-use-nodiscard)
+    [[nodiscard]] std::vector<double>::const_iterator end() const noexcept {
         return data.end();
     }
 
@@ -137,7 +137,7 @@ class Matrix {
      * @throw std::out_of_range if row is negative or bigger than nrows.
      * @return A row matrix of the corresponding row.
      */
-    Matrix row(int row) const;  // NOLINT(modernize-use-nodiscard)
+    [[nodiscard]] Matrix row(int row) const;
 
     /**
      * @brief Return one of a matrix's columns.
@@ -146,7 +146,7 @@ class Matrix {
      * @throw std::out_of_range if col is negative or bigger than ncols.
      * @return A column matrix of the corresponding column.
      */
-    Matrix col(int col) const;  // NOLINT(modernize-use-nodiscard)
+    [[nodiscard]] Matrix col(int col) const;
 
     /**
      * @brief Set one of a matrix's rows to be equal to the row of another.
@@ -224,22 +224,67 @@ class Matrix {
         return data[i * ncols + j];
     }
 
+    // Converters
+
+    /**
+     * @brief Converts a 1-dimensional matrix to a vector.
+     *
+     * No copy overhead and is therefore efficient for both row and column matrices.
+     *
+     * @throw std::invalid_argument if nrows != 1 and ncols != 1.
+     * @return A constant reference to the matrix's data.
+     */
+    [[nodiscard]] const std::vector<double>& asVector() const {
+        if (nrows != 1 && ncols != 1) {
+            throw std::invalid_argument("asVector: matrix must be a row or column matrix");
+        }
+        return data;
+    }
+
+    /**
+     * @brief Converts a 1-dimensional matrix to a std::span.
+     *
+     * Creates a non-owning read-only view of the matrix's data.
+     * This is faster than returning a copy of the data as a vector.
+     *
+     * @throw std::invalid_argument if nrows != 1 and ncols != 1.
+     * @return A std::span<const double> corresponding to the data.
+     */
+    [[nodiscard]] std::span<const double> asSpan() const {
+        if (nrows != 1 && ncols != 1) {
+            throw std::invalid_argument("asSpan: matrix must be a row or column matrix");
+        }
+        return data;
+    }
+
+    /**
+     * @brief Converts a 1x1 matrix to a scalar.
+     *
+     * @throw std::invalid_argument if nrows != 1 or ncols != 1.
+     * @return A double of the matrix's single element.
+     */
+    [[nodiscard]] double asScalar() const {
+        if (nrows != 1 || ncols != 1) {
+            throw std::invalid_argument("asScalar: matrix must be 1x1");
+        }
+        return data.front();
+    }
 
     // Comparison operators
 
     /**
-    * @brief Tests whether two matrices are equal
-    *
-    * Implemented by ensuring dimensions and elements are equal
-    */
+     * @brief Tests whether two matrices are equal
+     *
+     * Implemented by ensuring dimensions and elements are equal
+     */
     bool operator==(const Matrix& other) const noexcept;
 
     /**
-    * @brief Tests whether two matrices are equal up to a tolerance.
-    *
-    * Implemented by ensuring dimensions are equal and elements are
-    * less in absolute value than tolerance pairwise.
-    */
+     * @brief Tests whether two matrices are equal up to a tolerance.
+     *
+     * Implemented by ensuring dimensions are equal and elements are
+     * less in absolute value than tolerance pairwise.
+     */
     [[nodiscard]] bool isApprox(const Matrix& other, double tolerance) const noexcept;
 
    private:
@@ -272,7 +317,8 @@ class Matrix {
      * @param dim A matrix row or column dimension.
      * @param name The name of the input dimension.
      * @throw std::invalid_argument if dim is not positive.
-     * @return The dimension. */
+     * @return The dimension.
+     */
     static int validDimension(int dim, const std::string& name) {
         if (dim <= 0) {
             std::stringstream s;
@@ -281,7 +327,8 @@ class Matrix {
         }
         return dim;
     }
-};
+
+};  // class Matrix
 
 }  // namespace FinMaths::Maths
 

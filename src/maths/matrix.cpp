@@ -5,9 +5,12 @@
 #include <cstddef>
 #include <sstream>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace FinMaths::Maths {
+
+// Constructors
 
 Matrix::Matrix(int nrows, int ncols, double value)
     : nrows(validDimension(nrows, "nrows")),
@@ -42,7 +45,7 @@ Matrix::Matrix(const std::vector<std::vector<double> >& values)
     data.reserve(static_cast<std::size_t>(nrows) * ncols);
 
     for (const std::vector<double>& row : values) {
-        if (static_cast<int>(row.size()) != ncols) {
+        if (std::cmp_not_equal(row.size(), ncols)) {
             throw std::invalid_argument(
                 "Matrix: values must be a non-empty vector of non-empty vectors all of the same "
                 "size");
@@ -50,6 +53,8 @@ Matrix::Matrix(const std::vector<std::vector<double> >& values)
         data.insert(data.end(), row.begin(), row.end());
     }
 }
+
+// Accessors
 
 Matrix Matrix::row(int row) const {
     if (row < 0 || row >= nrows) {
@@ -94,6 +99,8 @@ void Matrix::setCol(int col, const Matrix& other, int otherCol) {
         it2 += other.ncols;
     }
 }
+
+// Comparison operators
 
 bool Matrix::operator==(const Matrix& other) const noexcept {
     return nrows == other.nrows && ncols == other.ncols && data == other.data;
