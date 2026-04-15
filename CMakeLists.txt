@@ -6,6 +6,23 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Formatting
+find_program(CLANG_FORMAT clang-format REQUIRED)
+add_custom_target(fmt
+    COMMAND find ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src
+            ${CMAKE_SOURCE_DIR}/tests ${CMAKE_SOURCE_DIR}/examples
+            -name "*.cpp" -o -name "*.hpp" | xargs ${CLANG_FORMAT} -i
+    COMMENT "Formatting sources with clang-format"
+)
+
+# Linting
+find_program(CLANG_TIDY clang-tidy REQUIRED)
+add_custom_target(lint
+    COMMAND find ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src
+            -name "*.cpp" -o -name "*.hpp" | xargs ${CLANG_TIDY} -p ${CMAKE_BINARY_DIR}
+    COMMENT "Linting sources with clang-tidy"
+)
+
 # Library
 add_library(FinMaths
     src/maths/distributions.cpp
