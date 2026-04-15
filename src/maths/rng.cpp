@@ -15,7 +15,7 @@ std::mutex rngMutex;
 }  // namespace
 
 void seedRNG(unsigned int seed) {
-    std::lock_guard<std::mutex> lock(rngMutex);
+    std::scoped_lock lock(rngMutex);
     mersenneTwister.seed(seed);
 }
 
@@ -24,7 +24,7 @@ double randomUniform(std::mt19937& rng) {
 }
 
 double randomUniform() {
-    std::lock_guard<std::mutex> lock(rngMutex);
+    std::scoped_lock lock(rngMutex);
     return randomUniform(mersenneTwister);
 }
 
@@ -33,7 +33,7 @@ double randomNormal(std::mt19937& rng) {
 }
 
 double randomNormal() {
-    std::lock_guard<std::mutex> lock(rngMutex);
+    std::scoped_lock lock(rngMutex);
     return randomNormal(mersenneTwister);
 }
 
