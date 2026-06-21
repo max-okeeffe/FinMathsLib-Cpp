@@ -270,22 +270,137 @@ class Matrix {
         return data.front();
     }
 
+    // Arithmetic operators
+
+    /**
+     * @brief Adds scalar to the elements of this.
+     */
+    Matrix& operator+=(double scalar);
+
+    /**
+     * @brief Adds a matrix other elementwise to this.
+     * @throw std::invalid_argument if other has different dimensions from this.
+     */
+    Matrix& operator+=(const Matrix& other);
+
+    /**
+     * @brief Takes away a scalar from the elements of this.
+     */
+    Matrix& operator-=(double scalar);
+
+    /**
+     * @brief Takes away a matrix other elementwise from this.
+     * @throw std::invalid_argument if other has different dimensions from this.
+     */
+    Matrix& operator-=(const Matrix& other);
+
+    /**
+     * @brief Multiplies the elements of this by scalar.
+     */
+    Matrix& operator*=(double scalar);
+
+    /**
+     * @brief Divides the elements of this by scalar.
+     * @throw std::invalid_argument if scalar equals zero.
+     */
+    Matrix& operator/=(double scalar);
+
+    /**
+     * @brief Adds a matrix and a scalar.
+     */
+    friend Matrix operator+(Matrix m, double scalar) {
+        return m += scalar;
+    }
+
+    /**
+     * @brief Adds a scalar and a matrix.
+     */
+    friend Matrix operator+(double scalar, Matrix m) {
+        return m += scalar;
+    }
+
+    /**
+     * @brief Adds two matrices together.
+     * @throw std::invalid_argument if the matrices do not have the same dimensions.
+     */
+    friend Matrix operator+(Matrix lhs, const Matrix& rhs) {
+        return lhs += rhs;
+    }
+
+    /**
+     * @brief Returns the additive inverse of a matrix.
+     */
+    friend Matrix operator-(Matrix m) {
+        return m *= -1.0;
+    }
+
+    /**
+     * @brief Subtracts a scalar from a matrix.
+     */
+    friend Matrix operator-(Matrix m, double scalar) {
+        return m -= scalar;
+    }
+
+    /**
+     * @brief Subtracts a matrix from a scalar.
+     */
+    friend Matrix operator-(double scalar, Matrix m) {
+        return -std::move(m) += scalar;
+    }
+
+    /**
+     * @brief Subtracts one matrix from another.
+     * @throw std::invalid_argument if the matrices have different dimensions.
+     */
+    friend Matrix operator-(Matrix lhs, const Matrix& rhs) {
+        return lhs -= rhs;
+    }
+
+    /**
+     * @brief Multiplies a matrix by a scalar.
+     */
+    friend Matrix operator*(Matrix m, double scalar) {
+        return m *= scalar;
+    }
+
+    /**
+     * @brief Multiplies a scalar by a matrix.
+     */
+    friend Matrix operator*(double scalar, Matrix m) {
+        return m *= scalar;
+    }
+
+    /**
+     * @brief Divides a matrix by a scalar.
+     * @throw std::logic_error if scalar is zero.
+     */
+    friend Matrix operator/(Matrix m, double scalar) {
+        return m /= scalar;
+    }
+
     // Comparison operators
 
     /**
-     * @brief Tests whether two matrices are equal
+     * @brief Tests whether two matrices are equal.
      *
-     * Implemented by ensuring dimensions and elements are equal
+     * Implemented by ensuring dimensions and elements are equal.
      */
-    bool operator==(const Matrix& other) const noexcept;
+    [[nodiscard]] bool operator==(const Matrix& other) const noexcept;
 
     /**
-     * @brief Tests whether two matrices are equal up to a tolerance.
+     * @brief Tests whether two matrices are equal within an absolute and relative
+     * tolerance.
      *
-     * Implemented by ensuring dimensions are equal and elements are
-     * less in absolute value than tolerance pairwise.
+     * Implemented by ensuring dimensions are equal and elements x, y are
+     * either less than each other in absolute tolerance or
+     * |x - y| <= relTolerance * max(|x|, |y|).
+     *
+     * @param other Matrix to compare against.
+     * @param absTolerance Absolute tolerance.
+     * @param relTolerance Relative tolerance.
      */
-    [[nodiscard]] bool isApprox(const Matrix& other, double tolerance) const noexcept;
+    [[nodiscard]] bool isApprox(const Matrix& other, double absTolerance = 1e-12,
+                                double relTolerance = 1e-12) const noexcept;
 
    private:
     int nrows;
@@ -319,7 +434,7 @@ class Matrix {
      * @throw std::invalid_argument if dim is not positive.
      * @return The dimension.
      */
-    static int validDimension(int dim, const std::string& name) {
+    static int validDimension(int dim, const std::string_view name) {
         if (dim <= 0) {
             std::stringstream s;
             s << "Matrix: " << name << " must be positive";
@@ -329,6 +444,13 @@ class Matrix {
     }
 
 };  // class Matrix
+
+/**
+ * @brief Multiplies one matrix by another using matrix multiplication.
+ * @throw std::invalid_argument if the number of columns of the left hand side does not equal the
+ * number of rows of the right hand side.
+ */
+[[nodiscard]] Matrix operator*(const Matrix& lhs, const Matrix& rhs);
 
 }  // namespace FinMaths::Maths
 

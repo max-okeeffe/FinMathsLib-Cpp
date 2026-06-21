@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <sstream>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -100,27 +101,117 @@ void Matrix::setCol(int col, const Matrix& other, int otherCol) {
     }
 }
 
+// Arithmetic operators
+
+Matrix& Matrix::operator+=(double scalar) {
+    for (auto& x : data) {
+        x += scalar;
+    }
+    return *this;
+}
+
+Matrix& Matrix::operator+=(const Matrix& other) {
+    if (nrows != other.nrows || ncols != other.ncols) {
+        throw std::invalid_argument("Matrix + : matrices must have the same dimensions");
+    }
+    auto it = other.begin();
+    for (auto& x : data) {
+        x += *it++;
+    }
+    return *this;
+}
+
+Matrix& Matrix::operator-=(double scalar) {
+    for (auto& x : data) {
+        x -= scalar;
+    }
+    return *this;
+}
+
+Matrix& Matrix::operator-=(const Matrix& other) {
+    if (nrows != other.nrows || ncols != other.ncols) {
+        throw std::invalid_argument("Matrix - : matrices must have the same dimensions");
+    }
+    auto it = other.begin();
+    for (auto& x : data) {
+        x -= *it++;
+    }
+    return *this;
+}
+
+Matrix& Matrix::operator*=(double scalar) {
+    for (auto& x : data) {
+        x *= scalar;
+    }
+    return *this;
+}
+
+Matrix& Matrix::operator/=(double scalar) {
+    if (scalar == 0.0) {
+        throw std::invalid_argument("Matrix / : cannot divide by zero");
+    }
+    return *this *= 1.0 / scalar;
+}
+
 // Comparison operators
 
 bool Matrix::operator==(const Matrix& other) const noexcept {
     return nrows == other.nrows && ncols == other.ncols && data == other.data;
 }
 
-bool Matrix::isApprox(const Matrix& other, double tolerance) const noexcept {
+bool Matrix::isApprox(const Matrix& other, double absTolerance,
+                      double relTolerance) const noexcept {
     if (nrows != other.nrows || ncols != other.ncols) {
         return false;
     }
 
-    auto it2 = other.begin();
-    auto end = this->end();
+    auto it = other.begin();
+    for (const double x : data) {
+        const double y = *it;
+        const double diff = std::abs(x - y);
 
-    for (auto it1 = this->begin(); it1 != end; ++it1) {
-        if (std::abs(*it1 - *it2) > tolerance) {
+        if (diff > absTolerance && diff > relTolerance * std::max(std::abs(x), std::abs(y))) {
             return false;
         }
-        ++it2;
+        ++it;
     }
     return true;
+}
+
+Matrix operator*(const Matrix& lhs, const Matrix& rhs) {
+    if (lhs.nCols() != rhs.nRows()) {
+        throw std::invalid_argument(
+            "Matrix * : matrix multiplication only defined for m by k and k by n matrices.");
+    }
+
+    int m = lhs.nRows();
+    int n = rhs.nCols();
+    int k = lhs.nCols();
+    Matrix ret(m, n);
+
+    auto retBegin = ret.begin();
+    auto lhsBegin = lhs.begin();
+
+    for (int i = 0; i < m; i++) {
+        auto lhsIter = lhsBegin;
+        auto rhsBegin = rhs.begin();
+
+        for (int j = 0; j < k; j++) {
+            double lhsVal = *lhsIter++;
+
+            auto rhsIter = rhsBegin;
+            auto rhsEnd = rhsIter + n;
+            auto retIter = retBegin;
+
+            while (rhsIter != rhsEnd) {
+                *retIter++ += lhsVal * (*rhsIter++);
+            }
+            rhsBegin += n;
+        }
+        lhsBegin += k;
+        retBegin += n;
+    }
+    return ret;
 }
 
 }  // namespace FinMaths::Maths
