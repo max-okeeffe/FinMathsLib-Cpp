@@ -201,3 +201,39 @@ TEST_F(MatrixTest, Converters) {
     EXPECT_THROW((void)rowMatrix.asScalar(), std::invalid_argument);
     EXPECT_THROW((void)colMatrix.asScalar(), std::invalid_argument);
 }
+
+TEST(Arithmetic, Addition) {
+    Matrix z{3, 2};
+    Matrix m{3, 2, 1.0};
+    Matrix n{3, 2, 1.0};
+
+    EXPECT_TRUE(m.isApprox(n));
+    EXPECT_TRUE(m.isApprox(-(-m)));
+    EXPECT_TRUE((1 + m).isApprox(2 * n));
+    EXPECT_TRUE((1 + m).isApprox(n * 2));
+    EXPECT_TRUE((m + 1).isApprox(n * 2));
+    EXPECT_TRUE((m + m + n).isApprox(3 * n));
+    EXPECT_TRUE((m - 1).isApprox(z));
+    EXPECT_TRUE((1 - m).isApprox(z));
+    EXPECT_TRUE((m - m).isApprox(z));
+}
+
+TEST(Arithmetic, Assignment) {
+    const Matrix u{3, 2, 1.0};
+    Matrix m{3, 2, 1.0};
+
+    m += 1.0;
+    EXPECT_TRUE(m.isApprox(u + u));
+
+    m += 2 * u;
+    EXPECT_TRUE(m.isApprox(4 * u));
+
+    m -= 2 * u;
+    EXPECT_TRUE(m.isApprox(2 * u));
+
+    m -= 1.0;
+    EXPECT_TRUE(m.isApprox(u));
+
+    m *= 8;
+    EXPECT_TRUE(m.isApprox(8 * u));
+}
