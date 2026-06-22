@@ -189,8 +189,8 @@ TEST_F(MatrixTest, Converters) {
     auto colSpan = colMatrix.asSpan();
     EXPECT_EQ(rowSpan.size(), vec.size());
     EXPECT_EQ(colSpan.size(), vec.size());
-    EXPECT_TRUE(std::equal(rowSpan.begin(), rowSpan.end(), vec.begin()));
-    EXPECT_TRUE(std::equal(colSpan.begin(), colSpan.end(), vec.begin()));
+    EXPECT_TRUE(std::ranges::equal(rowSpan.begin(), rowSpan.end(), vec.begin(), vec.end()));
+    EXPECT_TRUE(std::ranges::equal(colSpan.begin(), colSpan.end(), vec.begin(), vec.end()));
 
     const auto& ref = rowMatrix.asVector();
     EXPECT_EQ(ref.data(), &rowMatrix.at(0, 0));
@@ -202,7 +202,7 @@ TEST_F(MatrixTest, Converters) {
     EXPECT_THROW((void)colMatrix.asScalar(), std::invalid_argument);
 }
 
-TEST(Arithmetic, Addition) {
+TEST(Matrix, Arithmetic) {
     Matrix z{3, 2};
     Matrix m{3, 2, 1.0};
     Matrix n{3, 2, 1.0};
@@ -218,7 +218,7 @@ TEST(Arithmetic, Addition) {
     EXPECT_TRUE((m - m).isApprox(z));
 }
 
-TEST(Arithmetic, Assignment) {
+TEST(Matrix, Assignment) {
     const Matrix u{3, 2, 1.0};
     Matrix m{3, 2, 1.0};
 
@@ -236,4 +236,27 @@ TEST(Arithmetic, Assignment) {
 
     m *= 8;
     EXPECT_TRUE(m.isApprox(8 * u));
+}
+
+TEST(Matrix, Multiplication) {
+    Matrix x{{{1, 2, 3}, {4, 5, 6}}};
+    Matrix y{{{10, 11}, {20, 21}, {30, 31}}};
+    Matrix z{{{140, 146}, {320, 335}}};
+
+    EXPECT_TRUE(z.isApprox(x * y));
+    EXPECT_THROW(void(x * x), std::invalid_argument);
+}
+
+TEST(Matrix, Elementwise) {
+    const Matrix unity{3, 2, 1.0};
+    const Matrix m{3, 2, 3.0};
+
+    EXPECT_TRUE(m.exp().isApprox(std::exp(3.0) * unity));
+    EXPECT_TRUE(m.log().isApprox(std::log(3.0) * unity));
+    EXPECT_TRUE(m.sqrt().isApprox(std::sqrt(3.0) * unity));
+    EXPECT_TRUE(m.pow(0.4).isApprox(std::pow(3.0, 0.4) * unity));
+    EXPECT_TRUE(m.positivePart().isApprox(m));
+    EXPECT_TRUE(m.negativePart().isApprox(0.0 * unity));
+    EXPECT_TRUE((-m).negativePart().isApprox(-m));
+    EXPECT_TRUE((-m).positivePart().isApprox(0.0 * unity));
 }

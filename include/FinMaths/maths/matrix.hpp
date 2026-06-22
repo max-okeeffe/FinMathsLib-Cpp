@@ -1,10 +1,15 @@
 #ifndef FINMATHS_MATRIX_HPP
 #define FINMATHS_MATRIX_HPP
 
+#include <algorithm>
+#include <cmath>
+#include <concepts>
 #include <cstdint>
 #include <span>
 #include <sstream>
 #include <stdexcept>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 namespace FinMaths::Maths {
@@ -376,6 +381,98 @@ class Matrix {
      */
     friend Matrix operator/(Matrix m, double scalar) {
         return m /= scalar;
+    }
+
+    // Elementwise operators
+
+    /**
+     * @brief Returns a copy of the matrix with a function applied elementwise.
+     */
+    template <std::invocable<double> F>
+    [[nodiscard]] Matrix apply(F f) const {
+        Matrix result(*this);
+        std::transform(result.begin(), result.end(), result.begin(), f);
+        return result;
+    }
+
+    /**
+     * @brief Applies the exponential function elementwise.
+     */
+    [[nodiscard]] Matrix exp() const {
+        return apply([](double x) { return std::exp(x); });
+    }
+
+    /**
+     * @brief Applies the logarithm function elementwise.
+     */
+    [[nodiscard]] Matrix log() const {
+        return apply([](double x) { return std::log(x); });
+    }
+
+    /**
+     * @brief Applies the square root function elementwise.
+     */
+    [[nodiscard]] Matrix sqrt() const {
+        return apply([](double x) { return std::sqrt(x); });
+    }
+
+    /**
+     * @brief Applies the function max(x, 0.0) elementwise.
+     */
+    [[nodiscard]] Matrix positivePart() const {
+        return apply([](double x) { return std::max(x, 0.0); });
+    }
+
+    /**
+     * @brief Applies the function min(x, 0.0) elementwise.
+     */
+    [[nodiscard]] Matrix negativePart() const {
+        return apply([](double x) { return std::min(x, 0.0); });
+    }
+
+    /**
+     * @brief Applies the power function elementwise with a given exponent.
+     *
+     * @param double exponent The power to which each element will be taken.
+     */
+    [[nodiscard]] Matrix pow(double exponent) const {
+        return apply([exponent](double x) { return std::pow(x, exponent); });
+    }
+
+    /**
+     * @brief Applies the power function elementwise with a given matrix.
+     *
+     * @param Matrix exponent The power to which each element will be taken.
+     * @throw std::invalid_argument if the matrices have different dimensions.
+     */
+    [[nodiscard]] Matrix pow(const Matrix& exponent) const {
+        if (nrows != exponent.nrows || ncols != exponent.ncols) {
+            throw std::invalid_argument(
+                "Matrix::pow: matrix and exponent matrix must have the same dimensions");
+        }
+
+        Matrix result(*this);
+        std::ranges::transform(result, exponent, result.begin(),
+                               [](double x, double p) { return std::pow(x, p); });
+        return result;
+    }
+
+    /**
+     * @brief Applies multiplication elementwise with a given matrix.
+     *
+     * @param Matrix other The matrix whose elements will be multiplied with.
+     * @throw std::invalid_argument if the matrices have different dimensions.
+     */
+    [[nodiscard]] Matrix times(const Matrix& other) const {
+        if (nrows != other.nrows || ncols != other.ncols) {
+            throw std::invalid_argument(
+                "Matrix::times: matrix and other matrix must have the same dimensions");
+        }
+
+        Matrix result(*this);
+        std::ranges::transform(result, other, result.begin(),
+                               [](double x, double y) { return x * y; });
+        return result;
     }
 
     // Comparison operators
