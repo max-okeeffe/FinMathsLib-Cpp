@@ -5,6 +5,7 @@
 #include <cmath>
 #include <concepts>
 #include <cstdint>
+#include <functional>
 #include <span>
 #include <sstream>
 #include <stdexcept>
@@ -470,8 +471,7 @@ class Matrix {
         }
 
         Matrix result(*this);
-        std::ranges::transform(result, other, result.begin(),
-                               [](double x, double y) { return x * y; });
+        std::ranges::transform(result, other, result.begin(), std::multiplies<>());
         return result;
     }
 

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <functional>
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
@@ -114,10 +115,7 @@ Matrix& Matrix::operator+=(const Matrix& other) {
     if (nrows != other.nrows || ncols != other.ncols) {
         throw std::invalid_argument("Matrix + : matrices must have the same dimensions");
     }
-    auto it = other.begin();
-    for (auto& x : data) {
-        x += *it++;
-    }
+    std::ranges::transform(*this, other, begin(), std::plus<>());
     return *this;
 }
 
@@ -132,10 +130,7 @@ Matrix& Matrix::operator-=(const Matrix& other) {
     if (nrows != other.nrows || ncols != other.ncols) {
         throw std::invalid_argument("Matrix - : matrices must have the same dimensions");
     }
-    auto it = other.begin();
-    for (auto& x : data) {
-        x -= *it++;
-    }
+    std::ranges::transform(*this, other, begin(), std::minus<>());
     return *this;
 }
 
