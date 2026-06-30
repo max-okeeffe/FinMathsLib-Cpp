@@ -129,8 +129,8 @@ TEST_F(MatrixTest, GetRowCol) {
     Matrix row = nested.row(1);
     Matrix col = nested.col(1);
 
-    EXPECT_TRUE(row == Matrix(1, 3, {4.0, 5.0, 6.0}));
-    EXPECT_TRUE(col == Matrix(2, 1, {2.0, 5.0}));
+    EXPECT_TRUE(row.equals(Matrix(1, 3, {4.0, 5.0, 6.0})));
+    EXPECT_TRUE(col.equals(Matrix(2, 1, {2.0, 5.0})));
 }
 
 TEST_F(MatrixTest, GetRowColBounds) {
@@ -143,11 +143,11 @@ TEST_F(MatrixTest, GetRowColBounds) {
 TEST_F(MatrixTest, SetRowCol) {
     Matrix row(1, 3, 1.0);
     nested.setRow(1, row, 0);
-    EXPECT_TRUE(nested == Matrix({{1.0, 2.0, 3.0}, {1.0, 1.0, 1.0}}));
+    EXPECT_TRUE(nested.equals(Matrix({{1.0, 2.0, 3.0}, {1.0, 1.0, 1.0}})));
 
     Matrix col(2, 1, 4.0);
     nested.setCol(2, col, 0);
-    EXPECT_TRUE(nested == Matrix({{1.0, 2.0, 4.0}, {1.0, 1.0, 4.0}}));
+    EXPECT_TRUE(nested.equals(Matrix({{1.0, 2.0, 4.0}, {1.0, 1.0, 4.0}})));
 }
 
 TEST_F(MatrixTest, SetMismatchedDimensions) {
@@ -164,9 +164,9 @@ TEST_F(MatrixTest, Access) {
         }
     }
     nested.at(1, 2) = 7.0;
-    EXPECT_TRUE(nested == Matrix({{1.0, 2.0, 3.0}, {4.0, 5.0, 7.0}}));
+    EXPECT_TRUE(nested.equals(Matrix({{1.0, 2.0, 3.0}, {4.0, 5.0, 7.0}})));
     nested(0, 0) = -1.0;
-    EXPECT_TRUE(nested == Matrix({{-1.0, 2.0, 3.0}, {4.0, 5.0, 7.0}}));
+    EXPECT_TRUE(nested.equals(Matrix({{-1.0, 2.0, 3.0}, {4.0, 5.0, 7.0}})));
 
     EXPECT_THROW(nested.at(-1, 3), std::out_of_range);
 }
@@ -259,4 +259,119 @@ TEST(Matrix, Elementwise) {
     EXPECT_TRUE(m.negativePart().isApprox(0.0 * unity));
     EXPECT_TRUE((-m).negativePart().isApprox(-m));
     EXPECT_TRUE((-m).positivePart().isApprox(0.0 * unity));
+}
+
+TEST(Matrix, Comparison) {
+    const Matrix falseM{3, 2};
+    const Matrix trueM{3, 2, 1.0};
+    const Matrix three{3, 2, 3.0};
+    const Matrix four{3, 2, 4.0};
+
+    EXPECT_TRUE(trueM.equals(three < four));
+    EXPECT_TRUE(falseM.equals(four < three));
+    EXPECT_TRUE(falseM.equals(three < three));
+
+    EXPECT_TRUE(trueM.equals(three <= four));
+    EXPECT_TRUE(falseM.equals(four <= three));
+    EXPECT_TRUE(trueM.equals(three <= three));
+
+    EXPECT_TRUE(falseM.equals(three > four));
+    EXPECT_TRUE(trueM.equals(four > three));
+    EXPECT_TRUE(falseM.equals(three > three));
+
+    EXPECT_TRUE(falseM.equals(three >= four));
+    EXPECT_TRUE(trueM.equals(four >= three));
+    EXPECT_TRUE(trueM.equals(three >= three));
+
+    EXPECT_TRUE(falseM.equals(three == four));
+    EXPECT_TRUE(falseM.equals(four == three));
+    EXPECT_TRUE(trueM.equals(three == three));
+
+    EXPECT_TRUE(trueM.equals(three != four));
+    EXPECT_TRUE(trueM.equals(four != three));
+    EXPECT_TRUE(falseM.equals(three != three));
+
+    EXPECT_TRUE(trueM.equals(3.0 < four));
+    EXPECT_TRUE(falseM.equals(4.0 < three));
+    EXPECT_TRUE(falseM.equals(3.0 < three));
+
+    EXPECT_TRUE(trueM.equals(3.0 <= four));
+    EXPECT_TRUE(falseM.equals(4.0 <= three));
+    EXPECT_TRUE(trueM.equals(3.0 <= three));
+
+    EXPECT_TRUE(falseM.equals(3.0 > four));
+    EXPECT_TRUE(trueM.equals(4.0 > three));
+    EXPECT_TRUE(falseM.equals(3.0 > three));
+
+    EXPECT_TRUE(falseM.equals(3.0 >= four));
+    EXPECT_TRUE(trueM.equals(4.0 >= three));
+    EXPECT_TRUE(trueM.equals(3.0 >= three));
+
+    EXPECT_TRUE(falseM.equals(3.0 == four));
+    EXPECT_TRUE(falseM.equals(4.0 == three));
+    EXPECT_TRUE(trueM.equals(3.0 == three));
+
+    EXPECT_TRUE(trueM.equals(3.0 != four));
+    EXPECT_TRUE(trueM.equals(4.0 != three));
+    EXPECT_TRUE(falseM.equals(3.0 != three));
+
+    EXPECT_TRUE(trueM.equals(three < 4.0));
+    EXPECT_TRUE(falseM.equals(four < 3.0));
+    EXPECT_TRUE(falseM.equals(three < 3.0));
+
+    EXPECT_TRUE(trueM.equals(three <= 4.0));
+    EXPECT_TRUE(falseM.equals(four <= 3.0));
+    EXPECT_TRUE(trueM.equals(three <= 3.0));
+
+    EXPECT_TRUE(falseM.equals(three > 4.0));
+    EXPECT_TRUE(trueM.equals(four > 3.0));
+    EXPECT_TRUE(falseM.equals(three > 3.0));
+
+    EXPECT_TRUE(falseM.equals(three >= 4.0));
+    EXPECT_TRUE(trueM.equals(four >= 3.0));
+    EXPECT_TRUE(trueM.equals(three >= 3.0));
+
+    EXPECT_TRUE(falseM.equals(three == 4.0));
+    EXPECT_TRUE(falseM.equals(four == 3.0));
+    EXPECT_TRUE(trueM.equals(three == 3.0));
+
+    EXPECT_TRUE(trueM.equals(three != 4.0));
+    EXPECT_TRUE(trueM.equals(four != 3.0));
+    EXPECT_TRUE(falseM.equals(three != 3.0));
+}
+
+TEST(Matrix, Trace) {
+    Matrix x{1, 1, 1.0};
+    Matrix y{{{1.0, 2.0}, {3.0, 4.0}}};
+    Matrix z{{{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0}}};
+
+    EXPECT_DOUBLE_EQ(x.trace(), 1.0);
+    EXPECT_DOUBLE_EQ(y.trace(), 5.0);
+    EXPECT_DOUBLE_EQ(z.trace(), 15.0);
+}
+
+TEST_F(MatrixTest, Transpose) {
+    EXPECT_TRUE((m32.transpose()).equals(Matrix{2, 3}));
+    EXPECT_TRUE(m23.transpose().equals(Matrix{3, 2, 1.0}));
+    EXPECT_TRUE(scalar.transpose().equals(scalar));
+    EXPECT_TRUE(nested.transpose().transpose().equals(nested));
+}
+
+TEST_F(MatrixTest, Symmetric) {
+    EXPECT_FALSE(m32.isSquare());
+    EXPECT_FALSE(m23.isSymmetric());
+
+    EXPECT_TRUE((nested * nested.transpose()).isSymmetric());
+    EXPECT_TRUE((nested.transpose() * nested).isSymmetric());
+}
+
+TEST(Matrix, Identity) {
+    EXPECT_TRUE(Matrix::identity(3).equals(Matrix({{1, 0, 0}, {0, 1, 0}, {0, 0, 1}})));
+    EXPECT_THROW((void)Matrix::identity(0), std::invalid_argument);
+}
+
+TEST(Matrix, StreamOutput) {
+    std::ostringstream ss;
+    ss << Matrix(2, 2, {1.0, 2.0, 3.0, 4.0});
+    EXPECT_EQ(ss.str(), "[[1, 2]\n [3, 4]]");
 }

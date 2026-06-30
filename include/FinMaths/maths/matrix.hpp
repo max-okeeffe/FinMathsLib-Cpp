@@ -6,11 +6,12 @@
 #include <concepts>
 #include <cstdint>
 #include <functional>
+#include <iomanip>
+#include <ostream>
 #include <span>
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
-#include <utility>
 #include <vector>
 
 namespace FinMaths::Maths {
@@ -26,6 +27,9 @@ enum class VectorType : std::uint8_t { Row, Column };
  *
  * @note Indices are zero-based.
  * @note Elements are stored in row-major order.
+ * @note Comparison operators are performed elementwise and return a matrix of 1.0 if
+ * the comparison is true and 0.0 if it is false. Matrices consisting only of 1.0 and 0.0
+ * will be called "truth" matrices.
  */
 class Matrix {
    public:
@@ -51,7 +55,7 @@ class Matrix {
      *
      * @throw std::invalid_argument if dimensions are not positive or nrows * ncols != values.size()
      */
-    Matrix(int nrows, int ncols, const std::vector<double>& values);
+    Matrix(int nrows, int ncols, std::vector<double> values);
 
     /**
      * @brief Construct a 1x1 matrix with the given value.
@@ -68,7 +72,7 @@ class Matrix {
      *
      * @throw std::invalid_argument if values is empty.
      */
-    explicit Matrix(const std::vector<double>& values, VectorType type = VectorType::Row);
+    explicit Matrix(std::vector<double> values, VectorType type = VectorType::Row);
 
     /**
      * @brief Construct a matrix from a vector of vectors.
@@ -79,6 +83,16 @@ class Matrix {
      * positive size.
      */
     explicit Matrix(const std::vector<std::vector<double> >& values);
+
+    /**
+     * @brief Returns an identity matrix of a given size.
+     *
+     * @param size The dimensions of the identity matrix.
+     * @returns A size by size identity matrix.
+     *
+     * @throws invalid_argument if size is not positive.
+     */
+    [[nodiscard]] static Matrix identity(int size);
 
     // Accessors
 
@@ -114,13 +128,13 @@ class Matrix {
     /**
      * @brief Return an iterator to the beginning of the matrix data.
      */
-    std::vector<double>::iterator begin() noexcept {
+    [[nodiscard]] std::vector<double>::iterator begin() noexcept {
         return data.begin();
     }
     /**
      * @brief Return an iterator to the end of the matrix data.
      */
-    std::vector<double>::iterator end() noexcept {
+    [[nodiscard]] std::vector<double>::iterator end() noexcept {
         return data.end();
     }
     /**
@@ -315,14 +329,16 @@ class Matrix {
      * @brief Adds a matrix and a scalar.
      */
     friend Matrix operator+(Matrix m, double scalar) {
-        return m += scalar;
+        m += scalar;
+        return m;
     }
 
     /**
      * @brief Adds a scalar and a matrix.
      */
     friend Matrix operator+(double scalar, Matrix m) {
-        return m += scalar;
+        m += scalar;
+        return m;
     }
 
     /**
@@ -330,28 +346,32 @@ class Matrix {
      * @throw std::invalid_argument if the matrices do not have the same dimensions.
      */
     friend Matrix operator+(Matrix lhs, const Matrix& rhs) {
-        return lhs += rhs;
+        lhs += rhs;
+        return lhs;
     }
 
     /**
      * @brief Returns the additive inverse of a matrix.
      */
     friend Matrix operator-(Matrix m) {
-        return m *= -1.0;
+        std::ranges::transform(m, m.begin(), std::negate<>());
+        return m;
     }
 
     /**
      * @brief Subtracts a scalar from a matrix.
      */
     friend Matrix operator-(Matrix m, double scalar) {
-        return m -= scalar;
+        m -= scalar;
+        return m;
     }
 
     /**
      * @brief Subtracts a matrix from a scalar.
      */
     friend Matrix operator-(double scalar, Matrix m) {
-        return -std::move(m) += scalar;
+        std::ranges::transform(m, m.begin(), [scalar](double x) { return scalar - x; });
+        return m;
     }
 
     /**
@@ -359,21 +379,24 @@ class Matrix {
      * @throw std::invalid_argument if the matrices have different dimensions.
      */
     friend Matrix operator-(Matrix lhs, const Matrix& rhs) {
-        return lhs -= rhs;
+        lhs -= rhs;
+        return lhs;
     }
 
     /**
      * @brief Multiplies a matrix by a scalar.
      */
     friend Matrix operator*(Matrix m, double scalar) {
-        return m *= scalar;
+        m *= scalar;
+        return m;
     }
 
     /**
      * @brief Multiplies a scalar by a matrix.
      */
     friend Matrix operator*(double scalar, Matrix m) {
-        return m *= scalar;
+        m *= scalar;
+        return m;
     }
 
     /**
@@ -381,8 +404,31 @@ class Matrix {
      * @throw std::logic_error if scalar is zero.
      */
     friend Matrix operator/(Matrix m, double scalar) {
-        return m /= scalar;
+        m /= scalar;
+        return m;
     }
+
+    /**
+     * @brief Calculates the trace of the matrix.
+     */
+    [[nodiscard]] double trace() const;
+
+    /**
+     * @brief Returns the transpose of a matrix.
+     */
+    [[nodiscard]] Matrix transpose() const;
+
+    /**
+     * @brief Returns whether or not the matrix is square.
+     */
+    [[nodiscard]] bool isSquare() const {
+        return nrows == ncols;
+    }
+
+    /**
+     * @brief Returns whether or not the matrix is symmetric.
+     */
+    [[nodiscard]] bool isSymmetric() const;
 
     // Elementwise operators
 
@@ -392,7 +438,7 @@ class Matrix {
     template <std::invocable<double> F>
     [[nodiscard]] Matrix apply(F f) const {
         Matrix result(*this);
-        std::transform(result.begin(), result.end(), result.begin(), f);
+        std::ranges::transform(result, result.begin(), f);
         return result;
     }
 
@@ -482,7 +528,9 @@ class Matrix {
      *
      * Implemented by ensuring dimensions and elements are equal.
      */
-    [[nodiscard]] bool operator==(const Matrix& other) const noexcept;
+    [[nodiscard]] bool equals(const Matrix& other) const noexcept {
+        return nrows == other.nrows && ncols == other.ncols && data == other.data;
+    }
 
     /**
      * @brief Tests whether two matrices are equal within an absolute and relative
@@ -495,9 +543,306 @@ class Matrix {
      * @param other Matrix to compare against.
      * @param absTolerance Absolute tolerance.
      * @param relTolerance Relative tolerance.
+     * @return True if the matrices are approximately equal and false otherwise.
      */
     [[nodiscard]] bool isApprox(const Matrix& other, double absTolerance = 1e-12,
                                 double relTolerance = 1e-12) const noexcept;
+
+    /**
+     * @brief Performs an elementwise greater than comparison of two matrices.
+     *
+     * @param lhs Left hand matrix.
+     * @param rhs Right hand matrix.
+     * @throw std::invalid_argument if x and y have different dimensions.
+     * @return A truth matrix.
+     */
+    friend Matrix operator>(Matrix lhs, const Matrix& rhs) {
+        if (lhs.nrows != rhs.nrows || lhs.ncols != rhs.ncols) {
+            throw std::invalid_argument("Matrix >: matrices must have the same dimension");
+        }
+
+        std::ranges::transform(lhs, rhs, lhs.begin(), std::greater<>());
+        return lhs;
+    }
+
+    /**
+     * @brief Performs an elementwise greater than comparison of a matrix and a scalar.
+     *
+     * @param m Left hand matrix.
+     * @param scalar Right hand scalar.
+     * @return A truth matrix.
+     */
+    friend Matrix operator>(Matrix m, double scalar) {
+        std::ranges::transform(m, m.begin(), [scalar](double x) { return x > scalar ? 1.0 : 0.0; });
+        return m;
+    }
+
+    /**
+     * @brief Performs an elementwise greater than comparison of a scalar and a matrix.
+     *
+     * @param scalar Left hand scalar.
+     * @param m Right hand matrix.
+     * @return A truth matrix.
+     */
+    friend Matrix operator>(double scalar, Matrix m) {
+        std::ranges::transform(m, m.begin(), [scalar](double x) { return scalar > x ? 1.0 : 0.0; });
+        return m;
+    }
+
+    /**
+     * @brief Performs an elementwise greater than or equal comparison of two matrices.
+     *
+     * @param lhs Left hand matrix.
+     * @param rhs Right hand matrix.
+     * @throw std::invalid_argument if x and y have different dimensions.
+     * @return A truth matrix.
+     */
+    friend Matrix operator>=(Matrix lhs, const Matrix& rhs) {
+        if (lhs.nrows != rhs.nrows || lhs.ncols != rhs.ncols) {
+            throw std::invalid_argument("Matrix >=: matrices must have the same dimension");
+        }
+
+        std::ranges::transform(lhs, rhs, lhs.begin(), std::greater_equal<>());
+        return lhs;
+    }
+
+    /**
+     * @brief Performs an elementwise greater than or equal comparison of a matrix and a scalar.
+     *
+     * @param m Left hand matrix.
+     * @param scalar Right hand scalar.
+     * @return A truth matrix.
+     */
+    friend Matrix operator>=(Matrix m, double scalar) {
+        std::ranges::transform(m, m.begin(),
+                               [scalar](double x) { return x >= scalar ? 1.0 : 0.0; });
+        return m;
+    }
+
+    /**
+     * @brief Performs an elementwise greater than or equal to comparison of a scalar and a matrix.
+     *
+     * @param scalar Left hand scalar.
+     * @param m Right hand matrix.
+     * @return A truth matrix.
+     */
+    friend Matrix operator>=(double scalar, Matrix m) {
+        std::ranges::transform(m, m.begin(),
+                               [scalar](double x) { return scalar >= x ? 1.0 : 0.0; });
+        return m;
+    }
+
+    /**
+     * @brief Performs an elementwise less than comparison of two matrices.
+     *
+     * @param lhs Left hand matrix.
+     * @param rhs Right hand matrix.
+     * @throw std::invalid_argument if x and y have different dimensions.
+     * @return A truth matrix.
+     */
+    friend Matrix operator<(Matrix lhs, const Matrix& rhs) {
+        if (lhs.nrows != rhs.nrows || lhs.ncols != rhs.ncols) {
+            throw std::invalid_argument("Matrix <: matrices must have the same dimension");
+        }
+
+        std::ranges::transform(lhs, rhs, lhs.begin(), std::less<>());
+        return lhs;
+    }
+
+    /**
+     * @brief Performs an elementwise less than comparison of a matrix and a scalar.
+     *
+     * @param m Left hand matrix.
+     * @param scalar Right hand scalar.
+     * @return A truth matrix.
+     */
+    friend Matrix operator<(Matrix m, double scalar) {
+        std::ranges::transform(m, m.begin(), [scalar](double x) { return x < scalar ? 1.0 : 0.0; });
+        return m;
+    }
+
+    /**
+     * @brief Performs an elementwise less than comparison of a scalar and a matrix.
+     *
+     * @param scalar Left hand scalar.
+     * @param m Right hand matrix.
+     * @return A truth matrix.
+     */
+    friend Matrix operator<(double scalar, Matrix m) {
+        std::ranges::transform(m, m.begin(), [scalar](double x) { return scalar < x ? 1.0 : 0.0; });
+        return m;
+    }
+
+    /**
+     * @brief Performs an elementwise less than or equal comparison of two matrices.
+     *
+     * @param lhs Left hand matrix.
+     * @param rhs Right hand matrix.
+     * @throw std::invalid_argument if x and y have different dimensions.
+     * @return A truth matrix.
+     */
+    friend Matrix operator<=(Matrix lhs, const Matrix& rhs) {
+        if (lhs.nrows != rhs.nrows || lhs.ncols != rhs.ncols) {
+            throw std::invalid_argument("Matrix <=: matrices must have the same dimension");
+        }
+
+        std::ranges::transform(lhs, rhs, lhs.begin(), std::less_equal<>());
+        return lhs;
+    }
+
+    /**
+     * @brief Performs an elementwise less than or equal comparison of a matrix and a scalar.
+     *
+     * @param m Left hand matrix.
+     * @param scalar Right hand scalar.
+     * @return A truth matrix.
+     */
+    friend Matrix operator<=(Matrix m, double scalar) {
+        std::ranges::transform(m, m.begin(),
+                               [scalar](double x) { return x <= scalar ? 1.0 : 0.0; });
+        return m;
+    }
+
+    /**
+     * @brief Performs an elementwise less than or equal to comparison of a scalar and a matrix.
+     *
+     * @param scalar Left hand scalar.
+     * @param m Right hand matrix.
+     * @return A truth matrix.
+     */
+    friend Matrix operator<=(double scalar, Matrix m) {
+        std::ranges::transform(m, m.begin(),
+                               [scalar](double x) { return scalar <= x ? 1.0 : 0.0; });
+        return m;
+    }
+
+    /**
+     * @brief Performs an elementwise equal to comparison of two matrices.
+     *
+     * @param lhs Left hand matrix.
+     * @param rhs Right hand matrix.
+     * @throw std::invalid_argument if x and y have different dimensions.
+     * @return A truth matrix.
+     */
+    friend Matrix operator==(Matrix lhs, const Matrix& rhs) {
+        if (lhs.nrows != rhs.nrows || lhs.ncols != rhs.ncols) {
+            throw std::invalid_argument("Matrix ==: matrices must have the same dimension");
+        }
+
+        std::ranges::transform(lhs, rhs, lhs.begin(), std::equal_to<>());
+        return lhs;
+    }
+
+    /**
+     * @brief Performs an elementwise equal to comparison of a matrix and a scalar.
+     *
+     * @param m Left hand matrix.
+     * @param scalar Right hand scalar.
+     * @return A truth matrix.
+     */
+    friend Matrix operator==(Matrix m, double scalar) {
+        std::ranges::transform(m, m.begin(),
+                               [scalar](double x) { return x == scalar ? 1.0 : 0.0; });
+        return m;
+    }
+
+    /**
+     * @brief Performs an elementwise equal to comparison of a scalar and a matrix.
+     *
+     * @param scalar Left hand scalar.
+     * @param m Right hand matrix.
+     * @return A truth matrix.
+     */
+    friend Matrix operator==(double scalar, Matrix m) {
+        std::ranges::transform(m, m.begin(),
+                               [scalar](double x) { return scalar == x ? 1.0 : 0.0; });
+        return m;
+    }
+
+    /**
+     * @brief Performs an elementwise not equal to comparison of two matrices.
+     *
+     * @param lhs Left hand matrix.
+     * @param rhs Right hand matrix.
+     * @throw std::invalid_argument if x and y have different dimensions.
+     * @return A truth matrix.
+     */
+    friend Matrix operator!=(Matrix lhs, const Matrix& rhs) {
+        if (lhs.nrows != rhs.nrows || lhs.ncols != rhs.ncols) {
+            throw std::invalid_argument("Matrix !=: matrices must have the same dimension");
+        }
+
+        std::ranges::transform(lhs, rhs, lhs.begin(), std::not_equal_to<>());
+        return lhs;
+    }
+
+    /**
+     * @brief Performs an elementwise not equal to comparison of a matrix and a scalar.
+     *
+     * @param m Left hand matrix.
+     * @param scalar Right hand scalar.
+     * @return A truth matrix.
+     */
+    friend Matrix operator!=(Matrix m, double scalar) {
+        std::ranges::transform(m, m.begin(),
+                               [scalar](double x) { return x != scalar ? 1.0 : 0.0; });
+        return m;
+    }
+
+    /**
+     * @brief Performs an elementwise not equal to comparison of a scalar and a matrix.
+     *
+     * @param scalar Left hand scalar.
+     * @param m Right hand matrix.
+     * @return A truth matrix.
+     */
+    friend Matrix operator!=(double scalar, Matrix m) {
+        std::ranges::transform(m, m.begin(),
+                               [scalar](double x) { return scalar != x ? 1.0 : 0.0; });
+        return m;
+    }
+
+    // Stream
+
+    /**
+     * @brief Writes a readable representation of a matrix to an output stream.
+     *
+     * Matrices are formatted with one row per line, for example:
+     * [[1, 2, 3]
+     *  [4, 5, 6]]
+     *
+     * An empty matrix is written as [].
+     *
+     * @param out The output stream to write to.
+     * @param m The matrix to be written.
+     * @return A reference to the output stream.
+     */
+    friend std::ostream& operator<<(std::ostream& out, const Matrix& m) {
+        if (m.data.empty()) {
+            return out << "[]";
+        }
+
+        std::streamsize max_width = 0;
+        for (double val : m.data) {
+            std::ostringstream ss;
+            ss.copyfmt(out);  // Respect current stream flags (e.g. std::fixed)
+            ss << val;
+            max_width = std::max(max_width, static_cast<std::streamsize>(ss.str().length()));
+        }
+
+        for (int i = 0; i < m.nrows; ++i) {
+            out << (i == 0 ? "[[" : " [");
+            for (int j = 0; j < m.ncols; ++j) {
+                // std::setw applies padding right before printing the token
+                out << std::setw(max_width) << m.data[static_cast<std::size_t>(i) * m.ncols + j];
+                if (j < m.ncols - 1) {
+                    out << ", ";
+                }
+            }
+            out << (i == m.nrows - 1 ? "]]" : "]\n");
+        }
+        return out;
+    }
 
    private:
     int nrows;
