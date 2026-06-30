@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstddef>
 #include <functional>
+#include <ostream>
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
@@ -20,9 +21,11 @@ Matrix::Matrix(int nrows, int ncols, double value)
       data(static_cast<std::size_t>(nrows) * ncols, value) {
 }
 
-Matrix::Matrix(int nrows, int ncols, const std::vector<double>& values)
-    : nrows(validDimension(nrows, "nrows")), ncols(validDimension(ncols, "ncols")), data(values) {
-    if (static_cast<std::size_t>(nrows) * ncols != values.size()) {
+Matrix::Matrix(int nrows, int ncols, std::vector<double> values)
+    : nrows(validDimension(nrows, "nrows")),
+      ncols(validDimension(ncols, "ncols")),
+      data(std::move(values)) {
+    if (static_cast<std::size_t>(nrows) * ncols != data.size()) {
         throw std::invalid_argument("Matrix: nrows * ncols must equal values.size()");
     }
 }
@@ -30,10 +33,10 @@ Matrix::Matrix(int nrows, int ncols, const std::vector<double>& values)
 Matrix::Matrix(double value) : nrows(1), ncols(1), data(1, value) {
 }
 
-Matrix::Matrix(const std::vector<double>& values, VectorType type)
+Matrix::Matrix(std::vector<double> values, VectorType type)
     : nrows(type == VectorType::Row ? 1 : validDimension(static_cast<int>(values.size()), "nrows")),
       ncols(type == VectorType::Row ? validDimension(static_cast<int>(values.size()), "ncols") : 1),
-      data(values) {
+      data(std::move(values)) {
 }
 
 Matrix::Matrix(const std::vector<std::vector<double> >& values)
@@ -54,6 +57,17 @@ Matrix::Matrix(const std::vector<std::vector<double> >& values)
         }
         data.insert(data.end(), row.begin(), row.end());
     }
+}
+
+Matrix Matrix::identity(int size) {
+    int n = validDimension(size, "identity size");
+
+    int square = n * n;
+    Matrix result{n, n};
+    for (int i = 0; i < square; i += n + 1) {
+        result.data[i] = 1.0;
+    }
+    return result;
 }
 
 // Accessors
@@ -150,10 +164,6 @@ Matrix& Matrix::operator/=(double scalar) {
 
 // Comparison operators
 
-bool Matrix::operator==(const Matrix& other) const noexcept {
-    return nrows == other.nrows && ncols == other.ncols && data == other.data;
-}
-
 bool Matrix::isApprox(const Matrix& other, double absTolerance,
                       double relTolerance) const noexcept {
     if (nrows != other.nrows || ncols != other.ncols) {
@@ -169,6 +179,50 @@ bool Matrix::isApprox(const Matrix& other, double absTolerance,
             return false;
         }
         ++it;
+    }
+    return true;
+}
+
+double Matrix::trace() const {
+    if (nrows != ncols) {
+        throw std::invalid_argument("Matrix::trace: matrix must be square");
+    }
+
+    double sum = 0.0;
+    int n = static_cast<int>(data.size());
+    for (int i = 0; i < n; i += nrows + 1) {
+        sum += data[i];
+    }
+    return sum;
+}
+
+Matrix Matrix::transpose() const {
+    Matrix result{ncols, nrows};
+
+    auto resultIt = result.begin();
+    auto beg = begin();
+
+    for (int j = 0; j < ncols; ++j) {
+        auto it = beg + j;
+        for (int i = 0; i < nrows; ++i) {
+            *resultIt++ = *it;
+            it += ncols;
+        }
+    }
+    return result;
+}
+
+bool Matrix::isSymmetric() const {
+    if (!isSquare()) {
+        return false;
+    }
+
+    for (int i = 0; i < nrows - 1; ++i) {
+        for (int j = i + 1; j < nrows; ++j) {
+            if (data[i * ncols + j] != data[j * ncols + i]) {
+                return false;
+            }
+        }
     }
     return true;
 }
